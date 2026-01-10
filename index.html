@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>ExactKB – Compress Image to Exact KB Size</title>
+  <meta name="description" content="ExactKB is a free online image compressor that reduces images to an exact KB size instantly. Fast, secure, and no upload required." />
+  <meta name="keywords" content="image compressor, exact kb image, reduce image size, compress image online" />
+  <meta name="author" content="Arghyadip Ghosh" />
+
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #111;
+      --muted: #555;
+      --btn: #4CAF50;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #f1f1f1;
+      --muted: #aaa;
+      --btn: #5cb85c;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .box {
+      background: var(--card);
+      padding: 40px;
+      border-radius: 18px;
+      width: 75vw;
+      max-width: 900px;
+      height: 75vh;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      transition: background 0.3s;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 44px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    .logo {
+      background: linear-gradient(90deg, #4CAF50, #2e8b57);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+  }
+
+
+    .logo span {
+      font-weight: 700;
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      margin-top: 15px;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: var(--btn);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--card);
+      border: 1px solid #ccc;
+      border-radius: 50px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .site-footer {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      padding-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <main class="box">
+    <div class="toggle" onclick="toggleMode()">🌙</div>
+
+    <h1 class="logo">Exact<span>KB</span></h1>
+    <p style="margin-top:4px; font-size:15px; font-weight:600;">Image Compressor</p>
+    <p>Compress images to an exact KB size directly in your browser. No upload. 100% secure.</p>
+
+    <input type="file" id="upload" accept="image/*" />
+    <input type="number" id="targetSize" placeholder="Target size in KB (e.g. 150)" />
+
+    <button onclick="compressImage()">Compress & Download</button>
+
+    <div id="status"></div>
+
+    <p style="margin-top:15px; font-size:12px;">Works best for JPG images. PNG will be converted to JPG.</p>
+          </main>
+
+    <footer class="site-footer">
+      © <span id="year"></span> ExactKB · Created by Arghyadip Ghosh. All rights reserved.
+    </footer>
+
+  <script>
+    // Dark mode persistence
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark');
+    }
+
+    function toggleMode() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    }
+
+    async function compressImage() {
+      const file = document.getElementById('upload').files[0];
+      const targetKB = parseInt(document.getElementById('targetSize').value);
+      const status = document.getElementById('status');
+
+      if (!file || !targetKB) {
+        alert('Please upload an image and enter target size in KB');
+        return;
+      }
+
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = e => img.src = e.target.result;
+      reader.readAsDataURL(file);
+
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        let quality = 0.95;
+        let blob;
+
+        do {
+          blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+          quality -= 0.05;
+        } while (blob.size / 1024 > targetKB && quality > 0.05);
+
+        status.innerText = `Final Image Size: ${(blob.size / 1024).toFixed(1)} KB`;
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'compressed.jpg';
+        link.click();
+      };
+    }
+      // Set current year in footer
+    document.getElementById('year').innerText = new Date().getFullYear();
+  </script>
+  </div>
+</body>
+</html>
