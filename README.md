@@ -16,10 +16,10 @@ ExactKB is a lightweight, browser-based image compressor that allows users to re
 - Canvas API
 - Binary Search Algorithm for precise compression
 # 📂 Project Structure
-ExactKB/
-│
-├── index.html   # Complete application (HTML + CSS + JS)
-└── README.md    # Project documentation
+- ExactKB/
+- │
+- ├── index.html   # Complete application (HTML + CSS + JS)
+- └── README.md    # Project documentation
 # ⚙️ How It Works
 1. User uploads an image
 2. User enters the target size (in KB)
