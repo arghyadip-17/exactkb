@@ -9,6 +9,8 @@ ExactKB is a lightweight, browser-based image compressor that allows users to re
 - ✅ Dark mode with persistent theme
 - ✅ Automatic download after compression
 - ✅ Clean and responsive UI
+<img width="1919" height="903" alt="image" src="https://github.com/user-attachments/assets/94911501-fe17-445a-8b5a-e5e38dbd1318" />
+
 # 🛠️ Tech Stack
 - HTML5
 - CSS3
@@ -38,6 +40,8 @@ ExactKB is a lightweight, browser-based image compressor that allows users to re
 3. Enter target size (e.g. 150)
 4. Click Compress & Download
 5. Image downloads automatically 🎉
+<img width="1919" height="903" alt="image" src="https://github.com/user-attachments/assets/4107fc04-6217-4a0c-b4e0-c4887acef91b" />
+
 # 🌙 Dark Mode
 - Toggle using the moon button 🌙
 - Theme preference is saved using localStorage
