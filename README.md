@@ -48,7 +48,7 @@ ExactKB is a lightweight, browser-based image compressor that allows users to re
 # ⚠️ Limitations
 1. Best results with JPG images
 2. PNG images are converted to JPG
-3. Extremely small target sizes may reduce image quality
+3. Extremely small target sizes may reduce image the quality
 # 👤 Author
 Arghyadip Ghosh
 © 2026 — All rights reserved
