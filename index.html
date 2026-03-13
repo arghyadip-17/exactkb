@@ -1,413 +1,989 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ExactKB – Image Compressor & Editor</title>
-  <meta name="description" content="ExactKB - client-side image compressor with editor features: blur, sharpen, enhance, brightness/contrast/saturation and precise KB targeting." />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ExactKB — Image Compressor & Editor</title>
+  <meta name="description" content="ExactKB — client-side image compressor with editor: blur, sharpen, enhance, brightness/contrast/saturation and precise KB targeting."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
-    :root{ --bg:#f4f6f8; --card:#fff; --text:#111; --muted:#555; --accent:#4CAF50 }
-    body.dark{ --bg:#0f1720; --card:#1f2933; --text:#e6eef8; --muted:#9aa4ad; --accent:#60c081 }
-    *{box-sizing:border-box}
-    body{font-family:Inter,system-ui,Arial;margin:0;background:var(--bg);color:var(--text)}
-    .app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px}
-    header{width:100%;max-width:1100px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
-    .brand{font-weight:800;font-size:35px;color: #28cf25;}
-    .controls-grid{width:100%;max-width:1100px;display:grid;grid-template-columns:1fr 360px;gap:18px}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    /* ═══════════════════════════════════════
+       TOKENS
+    ═══════════════════════════════════════ */
+    :root {
+      --bg:        #111210;
+      --surface:   #191917;
+      --panel:     #1e1d1b;
+      --panel2:    #252421;
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.14);
+      --text:      #f0ede8;
+      --muted:     #7a7670;
+      --faint:     #3a3835;
+      --accent:    #43d459;
+      --accent-dk: #a07c28;
+      --accent-lt: #6ff06a;
+      --danger:    #e05c5c;
+      --success:   #5cb87e;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow:    0 2px 20px rgba(0,0,0,0.5);
+      --shadow-lg: 0 8px 48px rgba(0,0,0,0.7);
+    }
 
-    /* left - preview area */
-    #previewWrap{display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;min-height:480px}
-    .preview-canvas{border-radius:10px;background:#ddd;max-width:100%;max-height:68vh}
-    .thumb-info{font-size:13px;color:var(--muted)}
+    /* ── LIGHT THEME ── */
+    body.light {
+      --bg:        #f5f3ef;
+      --surface:   #eceae5;
+      --panel:     #e8e5df;
+      --panel2:    #dedad3;
+      --border:    rgba(0,0,0,0.09);
+      --border-hi: rgba(0,0,0,0.16);
+      --text:      #1a1815;
+      --muted:     #6b6560;
+      --faint:     #c8c4bc;
+      --accent:    #43d459;
+      --accent-dk: #8a6214;
+      --accent-lt: #43d459;
+      --shadow:    0 2px 20px rgba(0,0,0,0.1);
+      --shadow-lg: 0 8px 48px rgba(0,0,0,0.15);
+    }
+    body.light::before { opacity: 0.015; }
 
-    /* right - tools */
-    .tool {display:flex;flex-direction:column;gap:10px}
-    label{font-size:13px;color:var(--muted)}
-    input[type=file]{padding:6px}
-    select,input[type=number],button{padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px}
-    .row{display:flex;gap:8px}
-    .slider{display:flex;flex-direction:column}
-    .slider input{width:100%}
-    .small{font-size:12px;color:var(--muted)}
-    .actions{display:flex;gap:8px}
-    .btn{background:var(--accent);color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer}
-    .btn.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-    .status{font-size:13px;color:var(--muted);min-height:20px}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* responsive */
-    @media (max-width:920px){.controls-grid{grid-template-columns:1fr;max-width:780px}.tool{order:2}}
+    html { font-size: 14px; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* ═══════════════════════════════════════
+       NOISE TEXTURE OVERLAY
+    ═══════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* ═══════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════ */
+    .app {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* ═══════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════ */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(17,18,16,0.9);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 50;
+    }
+
+    .brand {
+      display: flex; align-items: baseline; gap: 14px;
+    }
+    .brand-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 22px; font-weight: 500;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+    }
+    .brand-sep {
+      width: 1px; height: 18px;
+      background: var(--border-hi);
+    }
+    .brand-tagline {
+      font-size: 12px; font-weight: 400;
+      color: var(--muted); letter-spacing: 0.3px;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .pill-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; letter-spacing: 1px;
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 5px 12px; border-radius: 100px;
+      text-transform: uppercase;
+    }
+
+    .theme-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--border-hi);
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ═══════════════════════════════════════
+       MAIN GRID
+    ═══════════════════════════════════════ */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1px;
+      background: var(--border);
+      min-height: 0;
+    }
+
+    /* ═══════════════════════════════════════
+       PREVIEW PANEL (LEFT)
+    ═══════════════════════════════════════ */
+    .preview-panel {
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Drop zone shown when no image */
+    #dropZone {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px; padding: 48px;
+      position: relative;
+      cursor: pointer;
+    }
+    #dropZone.drag-over { background: rgba(212,168,67,0.04); }
+    #dropZone.drag-over .drop-ring { border-color: var(--accent); }
+
+    .drop-ring {
+      width: 160px; height: 160px; border-radius: 50%;
+      border: 2px dashed var(--faint);
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.3s;
+      position: relative;
+    }
+    .drop-ring::before {
+      content: '';
+      position: absolute; inset: -8px; border-radius: 50%;
+      border: 1px solid var(--faint);
+      opacity: 0.4;
+    }
+    .drop-icon {
+      font-size: 48px; line-height: 1;
+      filter: grayscale(0.3);
+    }
+    .drop-title {
+      font-size: 16px; font-weight: 500; color: var(--text);
+      text-align: center;
+    }
+    .drop-sub {
+      font-size: 12px; color: var(--muted);
+      text-align: center; line-height: 1.7;
+    }
+    .drop-btn {
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      padding: 9px 22px; border-radius: 100px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .drop-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Canvas area */
+    #canvasWrap {
+      flex: 1; display: none;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 28px;
+      gap: 16px;
+      position: relative;
+      background:
+        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    #canvasWrap.visible { display: flex; }
+
+    #preview {
+      max-width: 100%; max-height: calc(100vh - 220px);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      display: block;
+    }
+
+    /* Image meta bar */
+    .img-meta {
+      display: flex; align-items: center; gap: 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 8px 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--muted);
+    }
+    .img-meta span { color: var(--text); }
+    .meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--faint); }
+
+    /* Status bar at bottom of preview */
+    .status-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .status-indicator {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+    .status-indicator.active { background: var(--accent); animation: pulse 1.2s infinite; }
+    .status-indicator.success { background: var(--success); }
+    .status-indicator.error { background: var(--danger); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    #statusText {
+      font-size: 12px; color: var(--muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ═══════════════════════════════════════
+       TOOL PANEL (RIGHT)
+    ═══════════════════════════════════════ */
+    .tool-panel {
+      background: var(--panel);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--faint) transparent;
+    }
+    .tool-panel::-webkit-scrollbar { width: 4px; }
+    .tool-panel::-webkit-scrollbar-track { background: transparent; }
+    .tool-panel::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+
+    /* Section headers */
+    .section {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--border);
+    }
+
+    /* File upload area */
+    .upload-target {
+      border: 1px dashed var(--border-hi);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-target:hover {
+      border-color: var(--accent);
+      background: rgba(212,168,67,0.04);
+    }
+    .upload-target input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+      width: 100%; height: 100%;
+    }
+    .upload-label {
+      font-size: 12px; font-weight: 500; color: var(--text);
+      pointer-events: none;
+    }
+    .upload-sub {
+      font-size: 11px; color: var(--muted); margin-top: 4px;
+      pointer-events: none;
+    }
+
+    /* Field group */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field + .field { margin-top: 12px; }
+
+    .field-label {
+      font-size: 11px; font-weight: 500;
+      color: var(--muted); letter-spacing: 0.3px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .field-label .val {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--accent);
+    }
+
+    /* Select */
+    select {
+      width: 100%;
+      background: var(--panel2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      padding: 9px 12px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7670' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      transition: border-color 0.2s;
+    }
+    select:focus { outline: none; border-color: var(--accent); }
+
+    /* Number input */
+    input[type="number"] {
+      width: 100%;
+      background: var(--panel2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      padding: 9px 12px;
+      transition: border-color 0.2s;
+    }
+    input[type="number"]:focus { outline: none; border-color: var(--accent); }
+    input[type="number"]::placeholder { color: var(--muted); }
+
+    /* Range slider — fully custom */
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 2px;
+      background: var(--faint);
+      border-radius: 2px;
+      cursor: pointer;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 2px var(--accent-dk);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 0 4px rgba(212,168,67,0.2);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+    }
+
+    /* Row layout */
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; min-width: 0; }
+
+    /* Divider */
+    .divider {
+      height: 1px; background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: #111; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600;
+      padding: 11px 16px; border-radius: var(--radius-sm);
+      border: none; cursor: pointer;
+      letter-spacing: 0.2px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(rgba(255,255,255,0.12), transparent);
+    }
+    .btn-primary:hover {
+      background: var(--accent-lt);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(212,168,67,0.3);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      padding: 9px 12px; border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-row { display: flex; gap: 8px; }
+
+    /* Quick action chips */
+    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      color: var(--muted); font-family: 'DM Sans', sans-serif;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 12px; border-radius: 100px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(212,168,67,0.05); }
+
+    /* Download section highlight */
+    .download-section {
+      background: linear-gradient(135deg, rgba(212,168,67,0.07) 0%, rgba(212,168,67,0.02) 100%);
+      border-top: 1px solid rgba(212,168,67,0.15) !important;
+    }
+
+    /* ═══════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════ */
+    footer {
+      padding: 16px 32px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface);
+    }
+    .footer-left { font-size: 11px; color: var(--muted); }
+    .footer-left strong { color: var(--text); font-weight: 500; }
+    .footer-right {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; color: var(--faint);
+      letter-spacing: 1px;
+    }
+
+    /* ═══════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════ */
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .tool-panel { order: -1; max-height: 50vh; }
+      #preview { max-height: 50vh; }
+      header { padding: 14px 20px; }
+      .brand-tagline { display: none; }
+    }
+
+    /* ═══════════════════════════════════════
+       LOAD ANIMATION
+    ═══════════════════════════════════════ */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .app > * { animation: fadeIn 0.4s ease both; }
+    header { animation-delay: 0s; }
+    main { animation-delay: 0.08s; }
+    footer { animation-delay: 0.14s; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="brand">ExactKB<br><small style="font-weight:600;font-size:15px;color:var(--muted)">An Image Compressor & Quick Editing Website</small></div>
-      <div>
-        <button class="btn secondary" onclick="toggleTheme()">🌙</button>
+<div class="app">
+
+  <!-- ═══ HEADER ═══ -->
+  <header>
+    <div class="brand">
+      <span class="brand-name">ExactKB</span>
+      <div class="brand-sep"></div>
+      <span class="brand-tagline">Image Compressor & Editor</span>
+    </div>
+    <div class="header-right">
+      <span class="pill-badge">Client-Side · Private</span>
+      <button class="theme-btn" id="themeBtn" title="Toggle theme" onclick="toggleTheme()">☽</button>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN ═══ -->
+  <main>
+
+    <!-- LEFT: Preview -->
+    <div class="preview-panel">
+
+      <!-- Drop zone (shown when no image) -->
+      <div id="dropZone">
+        <div class="drop-ring">
+          <div class="drop-icon">⬡</div>
+        </div>
+        <div>
+          <div class="drop-title">Drop your image here</div>
+          <div class="drop-sub">Supports JPEG, PNG, WebP, GIF, BMP<br>Processed entirely in your browser — nothing uploaded</div>
+        </div>
+        <button class="drop-btn" onclick="document.getElementById('upload').click()">Choose File</button>
       </div>
-    </header>
 
-    <div class="controls-grid">
-      <section class="card" id="left">
-        <div id="previewWrap">
-          <canvas id="preview" class="preview-canvas"></canvas>
-          <div class="thumb-info" id="imageInfo">No image loaded — upload an image to begin</div>
+      <!-- Canvas (shown after upload) -->
+      <div id="canvasWrap">
+        <canvas id="preview"></canvas>
+        <div class="img-meta" id="imageMeta">
+          <span id="metaDims">—</span>
+          <div class="meta-dot"></div>
+          <span id="metaFormat">—</span>
         </div>
-      </section>
+      </div>
 
-      <aside class="card tool">
-        <div>
-          <label for="upload">Upload image</label>
-          <input type="file" id="upload" accept="image/*" />
+      <!-- Status bar -->
+      <div class="status-bar">
+        <div class="status-indicator" id="statusDot"></div>
+        <span id="statusText">Idle — upload an image to begin</span>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Tool Panel -->
+    <aside class="tool-panel">
+
+      <!-- Upload -->
+      <div class="section">
+        <div class="section-label">Source</div>
+        <div class="upload-target">
+          <input type="file" id="upload" accept="image/*"/>
+          <div class="upload-label">📂 Click to open image</div>
+          <div class="upload-sub">or drag & drop on the canvas</div>
         </div>
+      </div>
 
-        <div>
-          <label>Format</label>
+      <!-- Output settings -->
+      <div class="section">
+        <div class="section-label">Output</div>
+
+        <div class="field">
+          <div class="field-label">Format</div>
           <select id="format">
-            <option value="image/webp">WebP (best quality/file)</option>
-            <option value="image/jpeg">JPEG</option>
-            <option value="image/png">PNG </option>
+            <option value="image/webp">WebP — best ratio</option>
+            <option value="image/jpeg">JPEG — universal</option>
+            <option value="image/png">PNG — lossless</option>
           </select>
         </div>
 
-        <div class="row">
-          <div style="flex:1">
-            <label>Target size (KB)</label>
-            <input type="number" id="targetKB" placeholder="Leave empty to use quality slider" />
+        <div class="row" style="margin-top:12px">
+          <div class="field">
+            <div class="field-label">Target KB <span style="color:var(--faint);font-size:10px">optional</span></div>
+            <input type="number" id="targetKB" placeholder="e.g. 150"/>
           </div>
-          <div style="width:120px">
-            <label>Quality</label>
-            <input type="range" id="quality" min="5" max="95" value="90" oninput="qVal.innerText=this.value" />
-            <div class="small"> <span id="qVal">90</span>%</div>
+          <div class="field">
+            <div class="field-label">Max Width <span style="color:var(--faint);font-size:10px">px</span></div>
+            <input type="number" id="maxWidth" placeholder="e.g. 1920"/>
           </div>
         </div>
 
-        <div>
-          <label>Max width (px) — optional (keeps aspect)</label>
-          <input type="number" id="maxWidth" placeholder="e.g. 1600" />
+        <div class="field" style="margin-top:12px">
+          <div class="field-label">
+            Quality
+            <span class="val"><span id="qVal">90</span>%</span>
+          </div>
+          <input type="range" id="quality" min="5" max="95" value="90"
+            oninput="qVal.innerText=this.value; updateTrack(this)"/>
+        </div>
+      </div>
+
+      <!-- Adjustments -->
+      <div class="section">
+        <div class="section-label">Adjustments</div>
+
+        <div class="field">
+          <div class="field-label">Brightness <span class="val"><span id="brightnessVal">100</span>%</span></div>
+          <input type="range" id="brightness" min="50" max="150" value="100"
+            oninput="brightnessVal.innerText=this.value; updateTrack(this)"/>
         </div>
 
-        <hr />
-
-        <div class="slider">
-          <label>Brightness <span class="small" id="brightnessVal">100%</span></label>
-          <input type="range" id="brightness" min="50" max="150" value="100" oninput="brightnessVal.innerText=this.value+'%'" />
-        </div>
-        <div class="slider">
-          <label>Contrast <span class="small" id="contrastVal">100%</span></label>
-          <input type="range" id="contrast" min="50" max="150" value="100" oninput="contrastVal.innerText=this.value+'%'" />
-        </div>
-        <div class="slider">
-          <label>Saturation <span class="small" id="saturationVal">100%</span></label>
-          <input type="range" id="saturation" min="0" max="200" value="100" oninput="saturationVal.innerText=this.value+'%'" />
-        </div>
-        <div class="slider">
-          <label>Blur (px) <span class="small" id="blurVal">0</span></label>
-          <input type="range" id="blur" min="0" max="10" value="0" step="0.5" oninput="blurVal.innerText=this.value" />
-        </div>
-        <div class="slider">
-          <label>Sharpen <span class="small" id="sharpenVal">0</span></label>
-          <input type="range" id="sharpen" min="0" max="5" value="0" step="0.25" oninput="sharpenVal.innerText=this.value" />
+        <div class="field">
+          <div class="field-label">Contrast <span class="val"><span id="contrastVal">100</span>%</span></div>
+          <input type="range" id="contrast" min="50" max="150" value="100"
+            oninput="contrastVal.innerText=this.value; updateTrack(this)"/>
         </div>
 
-        <div class="actions">
-          <button class="btn" onclick="applyFilters()">Apply Filters</button>
-          <button class="btn secondary" onclick="resetFilters()">Reset</button>
+        <div class="field">
+          <div class="field-label">Saturation <span class="val"><span id="saturationVal">100</span>%</span></div>
+          <input type="range" id="saturation" min="0" max="200" value="100"
+            oninput="saturationVal.innerText=this.value; updateTrack(this)"/>
         </div>
 
-        <div style="margin-top:6px;display:flex;gap:8px">
-          <button class="btn" onclick="autoEnhance()">Auto Enhance</button>
-          <button class="btn" onclick="revertToOriginal()">Revert</button>
+        <div class="divider" style="margin:14px 0"></div>
+
+        <div class="field">
+          <div class="field-label">Blur <span class="val"><span id="blurVal">0</span>px</span></div>
+          <input type="range" id="blur" min="0" max="10" value="0" step="0.5"
+            oninput="blurVal.innerText=this.value; updateTrack(this)"/>
         </div>
 
-        <div style="margin-top:8px">
-          <button class="btn" onclick="compressAndDownload()">Compress & Download</button>
+        <div class="field">
+          <div class="field-label">Sharpen <span class="val"><span id="sharpenVal">0</span></span></div>
+          <input type="range" id="sharpen" min="0" max="5" value="0" step="0.25"
+            oninput="sharpenVal.innerText=this.value; updateTrack(this)"/>
         </div>
 
-        <div class="status" id="status">Status: idle</div>
+        <!-- Quick preset chips -->
+        <div style="margin-top:14px">
+          <div class="field-label" style="margin-bottom:8px">Quick Presets</div>
+          <div class="chip-row">
+            <button class="chip" onclick="applyPreset('vivid')">Vivid</button>
+            <button class="chip" onclick="applyPreset('matte')">Matte</button>
+            <button class="chip" onclick="applyPreset('bw')">B&W</button>
+            <button class="chip" onclick="applyPreset('crisp')">Crisp</button>
+            <button class="chip" onclick="applyPreset('soft')">Soft</button>
+          </div>
+        </div>
 
-        <p class="small">Notes: For smallest files choose WebP + smaller dimensions. PNG is lossless (no quality slider). If you target a size the tool will try quality binary search and then downscale gradually if needed.</p>
-      </aside>
-    </div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn-ghost" onclick="autoEnhance()">✦ Auto Enhance</button>
+          <button class="btn-ghost" onclick="resetFilters()">↺ Reset</button>
+          <button class="btn-ghost" onclick="revertToOriginal()">⤺ Revert</button>
+        </div>
 
-    <footer style="margin-top:18px;color:var(--muted);font-size:13px">© <span id="year"></span> ExactKB · Created by Arghyadip Ghosh | All Rights Reserved.</footer>
-  </div>
+        <div style="margin-top:10px">
+          <button class="btn-ghost" style="width:100%" onclick="applyFilters()">Apply & Preview</button>
+        </div>
+      </div>
 
-  <script>
-    // small helpers
-    const el = id => document.getElementById(id);
-    let originalImage = null; // Image object
-    let originalImageDataURL = null;
-    let currentCanvas = el('preview');
-    let ctx = currentCanvas.getContext('2d');
-    el('year').innerText = new Date().getFullYear();
+      <!-- Download -->
+      <div class="section download-section">
+        <div class="section-label">Export</div>
+        <button class="btn-primary" onclick="compressAndDownload()">
+          ↓ &nbsp;Compress & Download
+        </button>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted);line-height:1.6">
+          If a target KB is set, quality binary-search + downscale will be attempted. PNG is lossless.
+        </div>
+      </div>
 
-    // theme
-    if(localStorage.getItem('theme')==='dark') document.body.classList.add('dark');
-    function toggleTheme(){document.body.classList.toggle('dark');localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light')}
+    </aside>
+  </main>
 
-    // file load
-    el('upload').addEventListener('change', async (e)=>{
-      const f = e.target.files[0];
-      if(!f) return;
-      originalImageDataURL = await fileToDataURL(f);
-      loadImageFromURL(originalImageDataURL);
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <div class="footer-left">© <span id="year"></span> <strong>ExactKB</strong> · Created by Arghyadip Ghosh · All rights reserved.</div>
+    <div class="footer-right">100% CLIENT-SIDE · ZERO UPLOAD</div>
+  </footer>
+
+</div><!-- .app -->
+
+<script>
+  /* ─── Helpers ─── */
+  const el = id => document.getElementById(id);
+  let originalImage = null;
+  let originalImageDataURL = null;
+  const canvas = el('preview');
+  const ctx = canvas.getContext('2d');
+  el('year').innerText = new Date().getFullYear();
+
+  /* ─── Track fill for range inputs ─── */
+  function updateTrack(input) {
+    const min = +input.min, max = +input.max, val = +input.value;
+    const pct = ((val - min) / (max - min)) * 100;
+    input.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--faint) ${pct}%)`;
+  }
+  document.querySelectorAll('input[type="range"]').forEach(r => updateTrack(r));
+
+  /* ─── Status helper ─── */
+  function setStatus(msg, state='idle') {
+    el('statusText').textContent = msg;
+    const dot = el('statusDot');
+    dot.className = 'status-indicator' + (state !== 'idle' ? ' '+state : '');
+  }
+
+  /* ─── Theme ─── */
+  function applyTheme(light) {
+    document.body.classList.toggle('light', light);
+    el('themeBtn').textContent = light ? '☀' : '☽';
+    el('themeBtn').title = light ? 'Switch to dark' : 'Switch to light';
+  }
+  applyTheme(localStorage.getItem('exactkb-theme') === 'light');
+  function toggleTheme() {
+    const isLight = !document.body.classList.contains('light');
+    applyTheme(isLight);
+    localStorage.setItem('exactkb-theme', isLight ? 'light' : 'dark');
+  }
+
+  /* ─── File upload ─── */
+  el('upload').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    originalImageDataURL = await fileToDataURL(f);
+    loadImageFromURL(originalImageDataURL, f.name);
+  });
+
+  /* Drag & drop on drop zone */
+  const dz = el('dropZone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', async e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (!f || !f.type.startsWith('image/')) return;
+    originalImageDataURL = await fileToDataURL(f);
+    loadImageFromURL(originalImageDataURL, f.name);
+  });
+
+  async function fileToDataURL(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
     });
+  }
 
-    async function fileToDataURL(file){
-      return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})
-    }
-
-    function loadImageFromURL(dataURL){
-      const img = new Image();
-      img.onload = ()=>{
-        originalImage = img;
-        // auto resize canvas to fit but cap dimensions to avoid huge canvases
-        const maxCanvasDim = 2800;
-        let w = img.width, h = img.height;
-        if(w>maxCanvasDim || h>maxCanvasDim){
-          const ratio = Math.min(maxCanvasDim/w, maxCanvasDim/h);
-          w = Math.round(w*ratio); h = Math.round(h*ratio);
-        }
-        currentCanvas.width = w; currentCanvas.height = h;
-        resetFilters();
-        renderPreview();
-        updateImageInfo();
-      };
-      img.src = dataURL;
-    }
-
-    function updateImageInfo(){
-      const info = el('imageInfo');
-      if(!originalImage) return info.innerText='No image loaded';
-      info.innerText = `Original: ${originalImage.width}×${originalImage.height} — format unknown (client)`;
-    }
-
-    // apply filters and render
-    function getFilterString(){
-      const b = el('brightness').value/100;
-      const c = el('contrast').value/100;
-      const s = el('saturation').value/100;
-      const bl = el('blur').value;
-      // ctx.filter accepts e.g. "brightness(1.1) contrast(1.2)"
-      return `brightness(${b}) contrast(${c}) saturate(${s}) blur(${bl}px)`;
-    }
-
-    async function renderPreview(applySharpen=false){
-      if(!originalImage) return;
-      // start from original image to keep edits non-destructive
-      // optional maxWidth
-      let w = originalImage.width, h = originalImage.height;
-      const maxW = parseInt(el('maxWidth').value) || w;
-      if(maxW && maxW < w){
-        const r = maxW / w; w = Math.round(w*r); h = Math.round(h*r);
+  function loadImageFromURL(dataURL, name='') {
+    const img = new Image();
+    img.onload = () => {
+      originalImage = img;
+      const maxDim = 2800;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        const ratio = Math.min(maxDim/w, maxDim/h);
+        w = Math.round(w*ratio); h = Math.round(h*ratio);
       }
-      currentCanvas.width = w; currentCanvas.height = h;
+      canvas.width = w; canvas.height = h;
 
-      // apply CSS-like filters via ctx.filter when drawing
-      ctx.save();
-      ctx.clearRect(0,0,currentCanvas.width,currentCanvas.height);
-      ctx.filter = getFilterString();
-      ctx.drawImage(originalImage, 0, 0, w, h);
-      ctx.filter = 'none';
-
-      if(applySharpen && parseFloat(el('sharpen').value)>0){
-        // apply convolution sharpen on pixel data
-        const amount = parseFloat(el('sharpen').value);
-        const id = ctx.getImageData(0,0,currentCanvas.width,currentCanvas.height);
-        const out = unsharpMask(id, amount);
-        ctx.putImageData(out,0,0);
-      }
-      ctx.restore();
-    }
-
-    function unsharpMask(imageData, amount=1){
-      // Unsharp mask: blur the image (3x3 box blur) then add scaled difference to original.
-      // This gives a clearer and more visible sharpening effect than the earlier kernel.
-      const w = imageData.width, h = imageData.height;
-      const src = imageData.data;
-      const dst = new Uint8ClampedArray(src.length);
-      const blur = new Uint8ClampedArray(src.length);
-
-      function idx(x,y){return (y*w + x)*4}
-      // 1) compute simple 3x3 box blur into `blur`
-      for(let y=0;y<h;y++){
-        for(let x=0;x<w;x++){
-          let rr=0, gg=0, bb=0, aa=0, count=0;
-          for(let ky=-1; ky<=1; ky++){
-            for(let kx=-1; kx<=1; kx++){
-              const nx = Math.min(w-1, Math.max(0, x+kx));
-              const ny = Math.min(h-1, Math.max(0, y+ky));
-              const idn = idx(nx, ny);
-              rr += src[idn];
-              gg += src[idn+1];
-              bb += src[idn+2];
-              aa += src[idn+3];
-              count++;
-            }
-          }
-          const out = idx(x,y);
-          blur[out] = Math.round(rr / count);
-          blur[out+1] = Math.round(gg / count);
-          blur[out+2] = Math.round(bb / count);
-          blur[out+3] = Math.round(aa / count);
-        }
-      }
-
-      // 2) combine original with mask = original + amount * (original - blur)
-      // amount controls strength (0=no change, higher = stronger sharpening)
-      const amt = amount;
-      for(let i=0;i<src.length;i+=4){
-        const oR = src[i], oG = src[i+1], oB = src[i+2], oA = src[i+3];
-        const bR = blur[i], bG = blur[i+1], bB = blur[i+2];
-        const r = Math.round(oR + amt * (oR - bR));
-        const g = Math.round(oG + amt * (oG - bG));
-        const b = Math.round(oB + amt * (oB - bB));
-        dst[i]   = clamp(r, 0, 255);
-        dst[i+1] = clamp(g, 0, 255);
-        dst[i+2] = clamp(b, 0, 255);
-        dst[i+3] = oA; // preserve original alpha
-      }
-
-      return new ImageData(dst, w, h);
-    }
-    function clamp(v,min,max){return v<min?min:(v>max?max:v)}
-
-    // UI actions
-    function applyFilters(){
-      el('status').innerText = 'Rendering preview...';
-      const applySharpen = parseFloat(el('sharpen').value)>0;
-      // render (if sharpen requested we call with true)
-      setTimeout(()=>{renderPreview(applySharpen).then(()=>el('status').innerText='Preview updated')},10);
-    }
-    function resetFilters(){
-      el('brightness').value=100; el('contrast').value=100; el('saturation').value=100; el('blur').value=0; el('sharpen').value=0;
-      el('brightnessVal').innerText='100%'; el('contrastVal').innerText='100%'; el('saturationVal').innerText='100%'; el('blurVal').innerText='0'; el('sharpenVal').innerText='0';
+      resetFilters();
       renderPreview();
+
+      // Show canvas, hide drop zone
+      el('dropZone').style.display = 'none';
+      el('canvasWrap').classList.add('visible');
+
+      // Meta
+      el('metaDims').textContent = `${img.width} × ${img.height}`;
+      el('metaFormat').textContent = name ? name.split('.').pop().toUpperCase() : 'IMAGE';
+      setStatus(`Loaded — ${img.width}×${img.height}px`, 'success');
+      setTimeout(() => setStatus(`Ready — adjust settings and download`), 2500);
+    };
+    img.src = dataURL;
+  }
+
+  /* ─── Filter string ─── */
+  function getFilterString() {
+    const b  = el('brightness').value / 100;
+    const c  = el('contrast').value / 100;
+    const s  = el('saturation').value / 100;
+    const bl = el('blur').value;
+    return `brightness(${b}) contrast(${c}) saturate(${s}) blur(${bl}px)`;
+  }
+
+  /* ─── Render preview ─── */
+  async function renderPreview(applySharpen = false) {
+    if (!originalImage) return;
+    let w = originalImage.width, h = originalImage.height;
+    const maxW = parseInt(el('maxWidth').value) || w;
+    if (maxW && maxW < w) { const r = maxW/w; w = Math.round(w*r); h = Math.round(h*r); }
+    canvas.width = w; canvas.height = h;
+    ctx.save();
+    ctx.clearRect(0, 0, w, h);
+    ctx.filter = getFilterString();
+    ctx.drawImage(originalImage, 0, 0, w, h);
+    ctx.filter = 'none';
+    if (applySharpen && parseFloat(el('sharpen').value) > 0) {
+      const id = ctx.getImageData(0, 0, w, h);
+      ctx.putImageData(unsharpMask(id, parseFloat(el('sharpen').value)), 0, 0);
     }
+    ctx.restore();
+  }
 
-    function revertToOriginal(){
-      if(!originalImageDataURL) return;
-      loadImageFromURL(originalImageDataURL);
-      el('status').innerText='Reverted to original';
-    }
-
-    function autoEnhance(){
-      // quick enhancement: increase contrast & saturation slightly
-      el('contrast').value = Math.min(150, parseInt(el('contrast').value) + 12);
-      el('saturation').value = Math.min(200, parseInt(el('saturation').value) + 12);
-      el('brightness').value = Math.min(150, parseInt(el('brightness').value) + 6);
-      el('contrastVal').innerText = el('contrast').value + '%';
-      el('saturationVal').innerText = el('saturation').value + '%';
-      el('brightnessVal').innerText = el('brightness').value + '%';
-      applyFilters();
-      el('status').innerText = 'Auto-enhanced';
-    }
-
-    // Compression logic: respects target KB by binary search on quality and optional downscale if quality floor
-    async function compressAndDownload(){
-      if(!originalImage) return alert('Upload an image first');
-      el('status').innerText = 'Preparing...';
-
-      const mime = el('format').value;
-      const targetKB = parseInt(el('targetKB').value) || null;
-      const maxWidth = parseInt(el('maxWidth').value) || null;
-      // We'll start from current preview settings applied
-      // create an offscreen canvas copy for export
-      let exportCanvas = document.createElement('canvas');
-      let w = originalImage.width, h = originalImage.height;
-      if(maxWidth && maxWidth < w){const r = maxWidth/w; w = Math.round(w*r); h = Math.round(h*r);} 
-      exportCanvas.width = w; exportCanvas.height = h;
-      const ectx = exportCanvas.getContext('2d');
-      ectx.filter = getFilterString();
-      ectx.drawImage(originalImage,0,0,w,h);
-      // if sharpen requested, apply convolution before exporting
-      const sharpenAmt = parseFloat(el('sharpen').value);
-      if(sharpenAmt>0){
-        const id = ectx.getImageData(0,0,exportCanvas.width, exportCanvas.height);
-        const out = unsharpMask(id, sharpenAmt);
-        ectx.putImageData(out,0,0);
-      }
-
-      // helper to blob
-      const toBlob = (canvas, mimeType, quality) => new Promise(res=>canvas.toBlob(res, mimeType, quality));
-
-      // If user didn't ask for targetKB -> just use quality slider and download
-      if(!targetKB){
-        const q = Math.max(0.05, parseInt(el('quality').value)/100);
-        if(mime === 'image/png'){
-          // PNG ignores quality param
-          const blob = await toBlob(exportCanvas, mime);
-          downloadBlob(blob, 'compressed.png'); el('status').innerText = `Saved: ${(blob.size/1024).toFixed(1)} KB`;
-          return;
-        }
-        const blob = await toBlob(exportCanvas, mime, q);
-        downloadBlob(blob, filenameForMime(mime));
-        el('status').innerText = `Saved: ${(blob.size/1024).toFixed(1)} KB`;
-        return;
-      }
-
-      // If targetKB specified: do binary search on quality, and if can't reach, downscale loop
-      el('status').innerText = `Trying to reach ${targetKB} KB...`;
-      let minQ = 0.05, maxQ = 0.95; let bestBlob = null; let bestDiff = Infinity;
-      // we'll try binary search for up to 18 iterations
-      for(let i=0;i<18;i++){
-        const q = (minQ+maxQ)/2;
-        const blob = await toBlob(exportCanvas, mime, q);
-        const sizeKB = blob.size/1024;
-        const diff = Math.abs(sizeKB - targetKB);
-        if(diff < bestDiff){ bestDiff = diff; bestBlob = blob; }
-        if(sizeKB > targetKB){
-          // file still too big -> reduce quality
-          maxQ = q;
-        } else {
-          minQ = q;
-        }
-        // stop if close enough within 2% or 2KB
-        if(diff <= Math.max(2, targetKB*0.02)) break;
-      }
-
-      // If bestBlob still larger than target and we hit quality floor (minQ close to 0.05), try downscaling
-      if(bestBlob && (bestBlob.size/1024) > targetKB + 2){
-        el('status').innerText = 'Quality floor reached — attempting gentle downscaling to meet size...';
-        let scale = 0.95; let attempts = 0; let scaledCanvas = exportCanvas;
-        while(attempts < 12){
-          attempts++;
-          const nw = Math.round(scaledCanvas.width * scale);
-          const nh = Math.round(scaledCanvas.height * scale);
-          if(nw < 100 || nh < 100) break; // avoid tiny images
-          const tmp = document.createElement('canvas'); tmp.width = nw; tmp.height = nh; const tctx = tmp.getContext('2d');
-          // draw previous canvas into smaller one (preserve filters already applied)
-          tctx.drawImage(scaledCanvas, 0, 0, nw, nh);
-          const q = Math.max(0.05, minQ); // use lowest acceptable quality
-          const blob = await toBlob(tmp, mime, q);
-          if(Math.abs((blob.size/1024) - targetKB) < bestDiff){ bestDiff = Math.abs((blob.size/1024) - targetKB); bestBlob = blob; }
-          if((blob.size/1024) <= targetKB + 2){
-            bestBlob = blob; break;
+  /* ─── Unsharp mask ─── */
+  function unsharpMask(imageData, amount = 1) {
+    const w = imageData.width, h = imageData.height;
+    const src = imageData.data;
+    const dst = new Uint8ClampedArray(src.length);
+    const blur = new Uint8ClampedArray(src.length);
+    const idx = (x, y) => (y*w + x)*4;
+    for (let y=0; y<h; y++) {
+      for (let x=0; x<w; x++) {
+        let rr=0, gg=0, bb=0, aa=0, count=0;
+        for (let ky=-1; ky<=1; ky++) {
+          for (let kx=-1; kx<=1; kx++) {
+            const nx = Math.min(w-1, Math.max(0, x+kx));
+            const ny = Math.min(h-1, Math.max(0, y+ky));
+            const idn = idx(nx, ny);
+            rr+=src[idn]; gg+=src[idn+1]; bb+=src[idn+2]; aa+=src[idn+3]; count++;
           }
-          scaledCanvas = tmp; scale *= 0.9; // further downscale next round
         }
+        const out = idx(x, y);
+        blur[out]=Math.round(rr/count); blur[out+1]=Math.round(gg/count);
+        blur[out+2]=Math.round(bb/count); blur[out+3]=Math.round(aa/count);
       }
-
-      if(!bestBlob) return el('status').innerText = 'Failed to compress (unexpected)';
-      downloadBlob(bestBlob, filenameForMime(mime));
-      el('status').innerText = `Saved: ${(bestBlob.size/1024).toFixed(1)} KB (target: ${targetKB} KB)`;
     }
-
-    function filenameForMime(mime){
-      if(mime==='image/webp') return 'compressed.webp';
-      if(mime==='image/png') return 'compressed.png';
-      return 'compressed.jpg';
+    const amt = amount;
+    for (let i=0; i<src.length; i+=4) {
+      const oR=src[i],oG=src[i+1],oB=src[i+2],oA=src[i+3];
+      const bR=blur[i],bG=blur[i+1],bB=blur[i+2];
+      dst[i]  =clamp(Math.round(oR+amt*(oR-bR)),0,255);
+      dst[i+1]=clamp(Math.round(oG+amt*(oG-bG)),0,255);
+      dst[i+2]=clamp(Math.round(oB+amt*(oB-bB)),0,255);
+      dst[i+3]=oA;
     }
+    return new ImageData(dst, w, h);
+  }
+  function clamp(v,a,b){return v<a?a:v>b?b:v}
 
-    function downloadBlob(blob, filename){
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-    }
+  /* ─── UI actions ─── */
+  function applyFilters() {
+    setStatus('Rendering…', 'active');
+    const doSharpen = parseFloat(el('sharpen').value) > 0;
+    setTimeout(() => {
+      renderPreview(doSharpen).then(() => setStatus('Preview updated', 'success'));
+    }, 10);
+  }
 
-    // initial render if no image
+  function resetFilters() {
+    [['brightness',100],['contrast',100],['saturation',100],['blur',0],['sharpen',0]].forEach(([id,v]) => {
+      el(id).value = v; updateTrack(el(id));
+    });
+    el('brightnessVal').innerText='100'; el('contrastVal').innerText='100';
+    el('saturationVal').innerText='100'; el('blurVal').innerText='0'; el('sharpenVal').innerText='0';
     renderPreview();
+  }
 
-  </script>
+  function revertToOriginal() {
+    if (!originalImageDataURL) return;
+    loadImageFromURL(originalImageDataURL);
+    setStatus('Reverted to original');
+  }
+
+  function autoEnhance() {
+    const bump = (id, valId, amt, min, max, unit='%') => {
+      const cur = parseInt(el(id).value);
+      const nv = Math.min(max, cur + amt);
+      el(id).value = nv; updateTrack(el(id));
+      el(valId).innerText = nv;
+    };
+    bump('contrast','contrastVal', 14, 50, 150);
+    bump('saturation','saturationVal', 14, 0, 200);
+    bump('brightness','brightnessVal', 6, 50, 150);
+    el('sharpen').value = Math.min(5, parseFloat(el('sharpen').value) + 0.5);
+    el('sharpenVal').innerText = el('sharpen').value;
+    updateTrack(el('sharpen'));
+    applyFilters();
+    setStatus('Auto-enhanced ✦', 'success');
+  }
+
+  /* Quick presets */
+  const PRESETS = {
+    vivid:  { brightness:105, contrast:115, saturation:145, blur:0, sharpen:0.5 },
+    matte:  { brightness:105, contrast:95,  saturation:70,  blur:0, sharpen:0   },
+    bw:     { brightness:100, contrast:110, saturation:0,   blur:0, sharpen:0   },
+    crisp:  { brightness:100, contrast:110, saturation:105, blur:0, sharpen:1.5 },
+    soft:   { brightness:108, contrast:90,  saturation:90,  blur:1, sharpen:0   },
+  };
+  function applyPreset(key) {
+    const p = PRESETS[key]; if (!p) return;
+    Object.entries(p).forEach(([id, val]) => {
+      el(id).value = val; updateTrack(el(id));
+    });
+    el('brightnessVal').innerText = p.brightness;
+    el('contrastVal').innerText   = p.contrast;
+    el('saturationVal').innerText = p.saturation;
+    el('blurVal').innerText       = p.blur;
+    el('sharpenVal').innerText    = p.sharpen;
+    applyFilters();
+    setStatus(`Preset "${key}" applied`, 'success');
+  }
+
+  /* ─── Compression & download ─── */
+  async function compressAndDownload() {
+    if (!originalImage) { setStatus('No image loaded', 'error'); return; }
+    setStatus('Preparing export…', 'active');
+
+    const mime = el('format').value;
+    const targetKB = parseInt(el('targetKB').value) || null;
+    const maxWidth = parseInt(el('maxWidth').value) || null;
+
+    let exportCanvas = document.createElement('canvas');
+    let w = originalImage.width, h = originalImage.height;
+    if (maxWidth && maxWidth < w) { const r=maxWidth/w; w=Math.round(w*r); h=Math.round(h*r); }
+    exportCanvas.width = w; exportCanvas.height = h;
+    const ectx = exportCanvas.getContext('2d');
+    ectx.filter = getFilterString();
+    ectx.drawImage(originalImage, 0, 0, w, h);
+    const sharpenAmt = parseFloat(el('sharpen').value);
+    if (sharpenAmt > 0) {
+      const id = ectx.getImageData(0,0,w,h);
+      ectx.putImageData(unsharpMask(id, sharpenAmt), 0, 0);
+    }
+
+    const toBlob = (c, mimeType, q) => new Promise(res => c.toBlob(res, mimeType, q));
+
+    if (!targetKB) {
+      const q = Math.max(0.05, parseInt(el('quality').value)/100);
+      const blob = mime==='image/png' ? await toBlob(exportCanvas, mime) : await toBlob(exportCanvas, mime, q);
+      downloadBlob(blob, filenameForMime(mime));
+      setStatus(`Saved: ${(blob.size/1024).toFixed(1)} KB`, 'success');
+      return;
+    }
+
+    setStatus(`Targeting ${targetKB} KB…`, 'active');
+    let minQ=0.05, maxQ=0.95, bestBlob=null, bestDiff=Infinity;
+    for (let i=0; i<18; i++) {
+      const q = (minQ+maxQ)/2;
+      const blob = await toBlob(exportCanvas, mime, q);
+      const sizeKB = blob.size/1024;
+      const diff = Math.abs(sizeKB - targetKB);
+      if (diff < bestDiff) { bestDiff=diff; bestBlob=blob; }
+      if (sizeKB > targetKB) maxQ=q; else minQ=q;
+      if (diff <= Math.max(2, targetKB*0.02)) break;
+    }
+
+    if (bestBlob && (bestBlob.size/1024) > targetKB+2) {
+      setStatus('Quality floor reached — downscaling…', 'active');
+      let scale=0.95, attempts=0, scaledCanvas=exportCanvas;
+      while (attempts < 12) {
+        attempts++;
+        const nw=Math.round(scaledCanvas.width*scale), nh=Math.round(scaledCanvas.height*scale);
+        if (nw<100||nh<100) break;
+        const tmp=document.createElement('canvas'); tmp.width=nw; tmp.height=nh;
+        tmp.getContext('2d').drawImage(scaledCanvas,0,0,nw,nh);
+        const blob=await toBlob(tmp, mime, Math.max(0.05,minQ));
+        if (Math.abs((blob.size/1024)-targetKB)<bestDiff){ bestDiff=Math.abs((blob.size/1024)-targetKB); bestBlob=blob; }
+        if ((blob.size/1024)<=targetKB+2){ bestBlob=blob; break; }
+        scaledCanvas=tmp; scale*=0.9;
+      }
+    }
+
+    if (!bestBlob) { setStatus('Compression failed', 'error'); return; }
+    downloadBlob(bestBlob, filenameForMime(mime));
+    setStatus(`Saved: ${(bestBlob.size/1024).toFixed(1)} KB (target: ${targetKB} KB)`, 'success');
+  }
+
+  function filenameForMime(mime) {
+    if (mime==='image/webp') return 'exactkb-compressed.webp';
+    if (mime==='image/png')  return 'exactkb-compressed.png';
+    return 'exactkb-compressed.jpg';
+  }
+
+  function downloadBlob(blob, filename) {
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  }
+</script>
 </body>
 </html>
