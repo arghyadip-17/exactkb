@@ -90,7 +90,6 @@ ExactKB
 ## 🌐 Website Link
 => https://exactkbimg.vercel.app/
 
-<img width="1894" height="1079" alt="image" src="https://github.com/user-attachments/assets/7e3e0129-dcb5-4efb-88d1-7ee104589728" />
 
 
 ---
