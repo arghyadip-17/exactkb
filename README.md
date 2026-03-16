@@ -88,7 +88,7 @@ ExactKB
 ---
 
 ## 🌐 Website Link
-=> https://exactkbimg.vercel.app/
+=> https://exactkb.vercel.app
 
 
 
