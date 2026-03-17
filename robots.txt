@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://exactkb.vercel.app/sitemap.xml
